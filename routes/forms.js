@@ -211,4 +211,17 @@ router.get('/:formId/submissions', async (req, res) => {
   }
 });
 
+// DELETE a submission
+router.delete('/submissions/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await pool.query('DELETE FROM submissions WHERE id = $1', [id]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Delete submission error:', err);
+    res.status(500).json({ error: 'Failed to delete submission' });
+  }
+});
+
 module.exports = router;
