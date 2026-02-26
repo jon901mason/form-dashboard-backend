@@ -7,10 +7,14 @@ const pool = require('../db');
 // Signup
 router.post('/signup', async (req, res) => {
   try {
-    const { email, password, name } = req.body;
+    const { email, password, name, invite_code } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password required' });
+    }
+
+    if (!invite_code || invite_code !== process.env.SIGNUP_CODE) {
+      return res.status(403).json({ error: 'Invalid invite code' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
