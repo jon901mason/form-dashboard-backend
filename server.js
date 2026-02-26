@@ -10,20 +10,8 @@ const app = express();
 // Middleware
 app.use(helmet());
 
-// Build CORS origins list
-const allowedOrigins = [
-  process.env.FRONTEND_URL || 'http://localhost:3000',
-  'https://trade-craft.com',
-  'http://localhost:3000',
-  'http://localhost:3001',
-];
-
-if (process.env.VERCEL_URL) {
-  allowedOrigins.push(process.env.VERCEL_URL);
-}
-
 app.use(cors({
-  origin: allowedOrigins,
+  origin: true,
   credentials: true,
 }));
 app.use(express.json());
