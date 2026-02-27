@@ -63,6 +63,30 @@ router.post('/', async (req, res) => {
   }
 });
 
+// Update client name / wordpress_url
+router.patch('/:id', async (req, res) => {
+  const { name, wordpress_url } = req.body;
+  if (!name && !wordpress_url) {
+    return res.status(400).json({ error: 'Provide name or wordpress_url to update' });
+  }
+  try {
+    const result = await pool.query(
+      `UPDATE clients
+          SET name          = COALESCE($1, name),
+              wordpress_url = COALESCE($2, wordpress_url),
+              updated_at    = CURRENT_TIMESTAMP
+        WHERE id = $3
+        RETURNING id, name, wordpress_url`,
+      [name || null, wordpress_url || null, req.params.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Client not found' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update client' });
+  }
+});
+
 // Delete a client (cascades to forms, submissions, api_keys)
 router.delete('/:id', async (req, res) => {
   try {
