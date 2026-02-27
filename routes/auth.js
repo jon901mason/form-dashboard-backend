@@ -80,4 +80,34 @@ router.post('/login', loginLimiter, async (req, res) => {
   }
 });
 
+// PATCH /api/auth/me — update current user's name/email
+router.patch('/me', async (req, res) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'No token provided' });
+
+  let userId;
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    userId = decoded.id;
+  } catch {
+    return res.status(403).json({ error: 'Invalid token' });
+  }
+
+  const { name, email } = req.body;
+  if (!name && !email) return res.status(400).json({ error: 'Nothing to update' });
+
+  try {
+    const result = await pool.query(
+      'UPDATE users SET name = COALESCE($1, name), email = COALESCE($2, email) WHERE id = $3 RETURNING id, email, name',
+      [name || null, email || null, userId]
+    );
+    res.json({ user: result.rows[0] });
+  } catch (err) {
+    if (err.code === '23505') return res.status(400).json({ error: 'Email already in use' });
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update account' });
+  }
+});
+
 module.exports = router;
