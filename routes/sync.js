@@ -68,11 +68,14 @@ router.post('/client/:clientId', async (req, res) => {
       const result = await pool.query(
         `INSERT INTO submissions (form_id, submission_data, submitted_at, external_id)
          VALUES ($1, $2, $3, $4)
-         ON CONFLICT (form_id, external_id) WHERE external_id IS NOT NULL DO NOTHING`,
+         ON CONFLICT (form_id, external_id) WHERE external_id IS NOT NULL
+         DO UPDATE SET submission_data = EXCLUDED.submission_data,
+                       submitted_at    = EXCLUDED.submitted_at
+         RETURNING (xmax = 0) AS inserted`,
         [dbFormId, JSON.stringify(entry.submission_data || {}), submittedAt, String(entry.external_id)]
       );
 
-      if (result.rowCount > 0) {
+      if (result.rows[0]?.inserted) {
         synced++;
       } else {
         skipped++;
