@@ -211,6 +211,21 @@ router.get('/:formId/submissions', async (req, res) => {
   }
 });
 
+// DELETE a form (cascades to submissions)
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query('DELETE FROM forms WHERE id = $1 RETURNING id', [id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Form not found' });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Delete form error:', err);
+    res.status(500).json({ error: 'Failed to delete form' });
+  }
+});
+
 // DELETE a submission
 router.delete('/submissions/:id', async (req, res) => {
   const { id } = req.params;
