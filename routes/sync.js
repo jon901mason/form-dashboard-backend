@@ -41,6 +41,10 @@ router.post('/client/:clientId', async (req, res) => {
     let skipped = 0;
 
     for (const entry of entries) {
+      if (entry.form_plugin === '_debug') {
+        console.log('[sync] Elementor debug:', entry.submission_data);
+        continue;
+      }
       if (!entry.form_id || !entry.form_plugin || !entry.external_id) {
         skipped++;
         continue;
