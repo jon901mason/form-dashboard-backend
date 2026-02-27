@@ -52,11 +52,17 @@ const authRoutes = require('./routes/auth');
 const clientRoutes = require('./routes/clients');
 const formRoutes = require('./routes/forms');
 const apiKeysRoutes = require('./routes/api-keys');
+const statsRoutes = require('./routes/stats');
+const submissionsRoutes = require('./routes/submissions');
+const syncRoutes = require('./routes/sync');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/clients', authenticateToken, clientRoutes);
 app.use('/api/forms', authenticateToken, formRoutes);
 app.use('/api/api-keys', authenticateToken, apiKeysRoutes);
+app.use('/api/stats', authenticateToken, statsRoutes);
+app.use('/api/submissions', authenticateToken, submissionsRoutes);
+app.use('/api/sync', authenticateToken, syncRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
