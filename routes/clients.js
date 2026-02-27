@@ -63,6 +63,20 @@ router.post('/', async (req, res) => {
   }
 });
 
+// Delete a client (cascades to forms, submissions, api_keys)
+router.delete('/:id', async (req, res) => {
+  try {
+    const result = await pool.query('DELETE FROM clients WHERE id = $1 RETURNING id', [req.params.id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Client not found' });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to delete client' });
+  }
+});
+
 // Get client details
 router.get('/:id', async (req, res) => {
   try {
