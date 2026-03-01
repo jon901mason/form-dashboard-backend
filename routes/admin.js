@@ -6,8 +6,10 @@ const pool = require('../db');
 // Middleware: require is_admin on the authenticated user
 const requireAdmin = async (req, res, next) => {
   try {
-    const result = await pool.query('SELECT is_admin FROM users WHERE id = $1', [req.user.id]);
-    if (!result.rows[0]?.is_admin) {
+    const result = await pool.query('SELECT is_admin, email FROM users WHERE id = $1', [req.user.id]);
+    const user = result.rows[0];
+    const isAdmin = user?.is_admin || user?.email === process.env.ADMIN_EMAIL;
+    if (!isAdmin) {
       return res.status(403).json({ error: 'Admin access required' });
     }
     next();

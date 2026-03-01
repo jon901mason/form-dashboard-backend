@@ -73,7 +73,8 @@ router.post('/login', loginLimiter, async (req, res) => {
       expiresIn: '7d',
     });
 
-    res.json({ token, user: { id: user.id, email: user.email, name: user.name, is_admin: user.is_admin } });
+    const isAdmin = user.is_admin || user.email === process.env.ADMIN_EMAIL;
+    res.json({ token, user: { id: user.id, email: user.email, name: user.name, is_admin: isAdmin } });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Login failed' });
