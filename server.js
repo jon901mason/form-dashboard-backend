@@ -55,6 +55,7 @@ const apiKeysRoutes = require('./routes/api-keys');
 const statsRoutes = require('./routes/stats');
 const submissionsRoutes = require('./routes/submissions');
 const syncRoutes = require('./routes/sync');
+const consentFormRoutes = require('./routes/consent-form');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/clients', authenticateToken, clientRoutes);
@@ -63,6 +64,7 @@ app.use('/api/api-keys', authenticateToken, apiKeysRoutes);
 app.use('/api/stats', authenticateToken, statsRoutes);
 app.use('/api/submissions', authenticateToken, submissionsRoutes);
 app.use('/api/sync', authenticateToken, syncRoutes);
+app.use('/api/consent-form', authenticateToken, consentFormRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
