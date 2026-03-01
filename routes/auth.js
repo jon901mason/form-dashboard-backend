@@ -73,7 +73,7 @@ router.post('/login', loginLimiter, async (req, res) => {
       expiresIn: '7d',
     });
 
-    res.json({ token, user: { id: user.id, email: user.email, name: user.name } });
+    res.json({ token, user: { id: user.id, email: user.email, name: user.name, is_admin: user.is_admin } });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Login failed' });
@@ -99,7 +99,7 @@ router.patch('/me', async (req, res) => {
 
   try {
     const result = await pool.query(
-      'UPDATE users SET name = COALESCE($1, name), email = COALESCE($2, email) WHERE id = $3 RETURNING id, email, name',
+      'UPDATE users SET name = COALESCE($1, name), email = COALESCE($2, email) WHERE id = $3 RETURNING id, email, name, is_admin',
       [name || null, email || null, userId]
     );
     res.json({ user: result.rows[0] });

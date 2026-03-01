@@ -47,6 +47,9 @@ const authenticateToken = (req, res, next) => {
   }
 };
 
+// Run migrations
+pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false').catch(console.error);
+
 // Routes
 const authRoutes = require('./routes/auth');
 const clientRoutes = require('./routes/clients');
@@ -56,6 +59,7 @@ const statsRoutes = require('./routes/stats');
 const submissionsRoutes = require('./routes/submissions');
 const syncRoutes = require('./routes/sync');
 const consentFormRoutes = require('./routes/consent-form');
+const adminRoutes = require('./routes/admin');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/clients', authenticateToken, clientRoutes);
@@ -65,6 +69,7 @@ app.use('/api/stats', authenticateToken, statsRoutes);
 app.use('/api/submissions', authenticateToken, submissionsRoutes);
 app.use('/api/sync', authenticateToken, syncRoutes);
 app.use('/api/consent-form', authenticateToken, consentFormRoutes);
+app.use('/api/admin', authenticateToken, adminRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
