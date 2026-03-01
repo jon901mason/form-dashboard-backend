@@ -8,7 +8,7 @@ const requireAdmin = async (req, res, next) => {
   try {
     const result = await pool.query('SELECT is_admin, email FROM users WHERE id = $1', [req.user.id]);
     const user = result.rows[0];
-    const isAdmin = user?.is_admin || user?.email === process.env.ADMIN_EMAIL;
+    const isAdmin = user?.is_admin || user?.email?.trim().toLowerCase() === (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
     if (!isAdmin) {
       return res.status(403).json({ error: 'Admin access required' });
     }

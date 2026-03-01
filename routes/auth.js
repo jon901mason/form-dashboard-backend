@@ -73,7 +73,7 @@ router.post('/login', loginLimiter, async (req, res) => {
       expiresIn: '7d',
     });
 
-    const isAdmin = user.is_admin || user.email === process.env.ADMIN_EMAIL;
+    const isAdmin = user.is_admin || user.email.trim().toLowerCase() === (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
     res.json({ token, user: { id: user.id, email: user.email, name: user.name, is_admin: isAdmin } });
   } catch (err) {
     console.error(err);
