@@ -67,25 +67,10 @@ router.post('/client/:clientId', async (req, res) => {
       if (formResult.rows.length === 0) { skipped++; continue; }
       const dbFormId = formResult.rows[0].id;
 
-      // 4c. Upsert submission — first claim any existing NULL external_id row at the
-      //     same timestamp (created by the real-time webhook), otherwise insert fresh.
+      // 4c. Upsert by external_id, then delete any NULL-external_id duplicate
+      //     at the same timestamp (left behind by real-time webhook).
       const submittedAt = entry.submitted_at ? new Date(entry.submitted_at) : new Date();
 
-      // Try to stamp the external_id onto a webhook-created row (external_id IS NULL)
-      const claimed = await pool.query(
-        `UPDATE submissions
-         SET external_id = $4, submission_data = $2, submitted_at = $3
-         WHERE form_id = $1 AND submitted_at = $3 AND external_id IS NULL
-         RETURNING id`,
-        [dbFormId, JSON.stringify(entry.submission_data || {}), submittedAt, String(entry.external_id)]
-      );
-
-      if (claimed.rows.length > 0) {
-        synced++;
-        continue;
-      }
-
-      // No webhook row to claim — insert (or update if already synced previously)
       const result = await pool.query(
         `INSERT INTO submissions (form_id, submission_data, submitted_at, external_id)
          VALUES ($1, $2, $3, $4)
@@ -94,6 +79,12 @@ router.post('/client/:clientId', async (req, res) => {
                        submitted_at    = EXCLUDED.submitted_at
          RETURNING (xmax = 0) AS inserted`,
         [dbFormId, JSON.stringify(entry.submission_data || {}), submittedAt, String(entry.external_id)]
+      );
+
+      // Remove any webhook-created (external_id IS NULL) row at the same timestamp
+      await pool.query(
+        `DELETE FROM submissions WHERE form_id = $1 AND submitted_at = $2 AND external_id IS NULL`,
+        [dbFormId, submittedAt]
       );
 
       if (result.rows[0]?.inserted) {
