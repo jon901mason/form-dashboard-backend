@@ -6,9 +6,11 @@ const pool = require('../db');
 router.get('/submissions', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT DISTINCT ON (s.submitted_at) s.id, s.submission_data, s.submitted_at
+      `SELECT DISTINCT ON (s.submitted_at) s.id, s.submission_data, s.submitted_at,
+              c.wordpress_url
        FROM submissions s
        JOIN forms f ON s.form_id = f.id
+       JOIN clients c ON f.client_id = c.id
        WHERE f.form_name = 'Client Consent Form'
          AND f.form_plugin = 'gravity-forms'
          AND f.form_id = '3'
