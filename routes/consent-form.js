@@ -11,6 +11,7 @@ router.get('/submissions', async (req, res) => {
        JOIN forms f ON s.form_id = f.id
        WHERE f.form_name = 'Client Consent Form'
          AND f.form_plugin = 'gravity-forms'
+         AND f.form_id = '3'
        ORDER BY s.submitted_at DESC`
     );
     res.json(result.rows);
