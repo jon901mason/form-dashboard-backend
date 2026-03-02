@@ -74,7 +74,7 @@ router.post('/login', loginLimiter, async (req, res) => {
     });
 
     const isAdmin = user.is_admin || user.email.trim().toLowerCase() === (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
-    res.json({ token, user: { id: user.id, email: user.email, name: user.name, is_admin: isAdmin } });
+    res.json({ token, user: { id: user.id, email: user.email, name: user.name, is_admin: isAdmin, avatar_url: user.avatar_url || null } });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Login failed' });
@@ -95,13 +95,13 @@ router.patch('/me', async (req, res) => {
     return res.status(403).json({ error: 'Invalid token' });
   }
 
-  const { name, email } = req.body;
-  if (!name && !email) return res.status(400).json({ error: 'Nothing to update' });
+  const { name, email, avatar_url } = req.body;
+  if (!name && !email && avatar_url === undefined) return res.status(400).json({ error: 'Nothing to update' });
 
   try {
     const result = await pool.query(
-      'UPDATE users SET name = COALESCE($1, name), email = COALESCE($2, email) WHERE id = $3 RETURNING id, email, name, is_admin',
-      [name || null, email || null, userId]
+      'UPDATE users SET name = COALESCE($1, name), email = COALESCE($2, email), avatar_url = COALESCE($3, avatar_url) WHERE id = $4 RETURNING id, email, name, is_admin, avatar_url',
+      [name || null, email || null, avatar_url || null, userId]
     );
     res.json({ user: result.rows[0] });
   } catch (err) {

@@ -49,6 +49,8 @@ const authenticateToken = (req, res, next) => {
 
 // Run migrations
 pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false')
+  .then(() => pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(500)'))
+
   .then(() => {
     if (process.env.ADMIN_EMAIL) {
       pool.query('UPDATE users SET is_admin = true WHERE email = $1', [process.env.ADMIN_EMAIL])
