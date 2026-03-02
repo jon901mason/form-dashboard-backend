@@ -34,7 +34,10 @@ router.post('/users', requireAdmin, async (req, res) => {
     res.json({ user: result.rows[0] });
   } catch (err) {
     if (err.code === '23505') {
-      return res.status(400).json({ error: 'Email already exists' });
+      const msg = err.constraint && err.constraint.includes('email')
+        ? 'Email already exists'
+        : `A unique constraint was violated (${err.constraint || 'unknown'}). Try removing the Profile Photo URL.`;
+      return res.status(400).json({ error: msg });
     }
     console.error(err);
     res.status(500).json({ error: 'Failed to create user' });
