@@ -25,4 +25,23 @@ router.get('/recent', async (req, res) => {
   }
 });
 
+// GET /api/submissions/client/:id — all submissions for a client across all forms
+router.get('/client/:id', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT s.id, s.submitted_at, s.submission_data,
+              f.form_name, f.form_plugin, f.id AS form_id
+       FROM submissions s
+       JOIN forms f ON s.form_id = f.id
+       WHERE f.client_id = $1
+       ORDER BY s.submitted_at DESC`,
+      [req.params.id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch client submissions' });
+  }
+});
+
 module.exports = router;
