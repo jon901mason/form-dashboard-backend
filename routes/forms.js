@@ -226,6 +226,24 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// DELETE multiple submissions
+router.delete('/submissions/bulk', async (req, res) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ error: 'ids must be a non-empty array' });
+  }
+  try {
+    const result = await pool.query(
+      'DELETE FROM submissions WHERE id = ANY($1) RETURNING id',
+      [ids]
+    );
+    res.json({ deleted: result.rowCount });
+  } catch (err) {
+    console.error('Bulk delete error:', err);
+    res.status(500).json({ error: 'Failed to bulk delete submissions' });
+  }
+});
+
 // DELETE a submission
 router.delete('/submissions/:id', async (req, res) => {
   const { id } = req.params;
