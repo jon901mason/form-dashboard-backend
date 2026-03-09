@@ -29,7 +29,7 @@ router.get('/ping2', (req, res) => {
 // Receive form submission from WordPress plugin
 router.post('/submissions', async (req, res) => {
   try {
-    const { form_id, form_name, form_plugin, submission_data, submitted_at } = req.body;
+    const { form_id, form_name, form_plugin, submission_data, submitted_at, external_id } = req.body;
 
     if (!req.user || !req.user.client_id) {
       return res.status(401).json({ error: 'Missing client context (API key must be linked to a client)' });
@@ -55,13 +55,24 @@ router.post('/submissions', async (req, res) => {
 
     const dbFormId = formResult.rows[0].id;
 
-    // Insert submission
+    // Insert submission (upsert on external_id when provided to prevent duplicates)
     const submittedAt = submitted_at ? new Date(submitted_at) : new Date();
 
-    await pool.query(
-      'INSERT INTO submissions (form_id, submission_data, submitted_at) VALUES ($1, $2, $3)',
-      [dbFormId, JSON.stringify(submission_data), submittedAt]
-    );
+    if (external_id) {
+      await pool.query(
+        `INSERT INTO submissions (form_id, submission_data, submitted_at, external_id)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (form_id, external_id) WHERE external_id IS NOT NULL
+         DO UPDATE SET submission_data = EXCLUDED.submission_data,
+                       submitted_at    = EXCLUDED.submitted_at`,
+        [dbFormId, JSON.stringify(submission_data), submittedAt, String(external_id)]
+      );
+    } else {
+      await pool.query(
+        'INSERT INTO submissions (form_id, submission_data, submitted_at) VALUES ($1, $2, $3)',
+        [dbFormId, JSON.stringify(submission_data), submittedAt]
+      );
+    }
 
     res.status(201).json({ success: true });
   } catch (err) {
