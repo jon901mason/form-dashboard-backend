@@ -51,6 +51,7 @@ const authenticateToken = (req, res, next) => {
 pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false')
   .then(() => pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(500)'))
   .then(() => pool.query('ALTER TABLE users DROP CONSTRAINT IF EXISTS users_avatar_url_key'))
+  .then(() => pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS client_id INTEGER REFERENCES clients(id) ON DELETE SET NULL'))
 
   .then(() => {
     if (process.env.ADMIN_EMAIL) {

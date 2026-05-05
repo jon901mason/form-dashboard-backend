@@ -6,18 +6,35 @@ const pool = require('../db');
 router.get('/recent', async (req, res) => {
   try {
     const days = parseInt(req.query.days, 10) || 7;
-    const result = await pool.query(
-      `SELECT s.id, s.submitted_at, s.submission_data,
-              f.form_name, f.form_plugin,
-              c.name AS client_name, c.id AS client_id
-       FROM submissions s
-       JOIN forms f ON s.form_id = f.id
-       JOIN clients c ON f.client_id = c.id
-       WHERE s.submitted_at >= NOW() - ($1 || ' days')::interval
-       ORDER BY s.submitted_at DESC
-       LIMIT 50`,
-      [days]
-    );
+    let result;
+    if (req.user?.client_id) {
+      result = await pool.query(
+        `SELECT s.id, s.submitted_at, s.submission_data,
+                f.form_name, f.form_plugin,
+                c.name AS client_name, c.id AS client_id
+         FROM submissions s
+         JOIN forms f ON s.form_id = f.id
+         JOIN clients c ON f.client_id = c.id
+         WHERE f.client_id = $2
+           AND s.submitted_at >= NOW() - ($1 || ' days')::interval
+         ORDER BY s.submitted_at DESC
+         LIMIT 50`,
+        [days, req.user.client_id]
+      );
+    } else {
+      result = await pool.query(
+        `SELECT s.id, s.submitted_at, s.submission_data,
+                f.form_name, f.form_plugin,
+                c.name AS client_name, c.id AS client_id
+         FROM submissions s
+         JOIN forms f ON s.form_id = f.id
+         JOIN clients c ON f.client_id = c.id
+         WHERE s.submitted_at >= NOW() - ($1 || ' days')::interval
+         ORDER BY s.submitted_at DESC
+         LIMIT 50`,
+        [days]
+      );
+    }
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -28,6 +45,9 @@ router.get('/recent', async (req, res) => {
 // GET /api/submissions/client/:id — all submissions for a client across all forms
 router.get('/client/:id', async (req, res) => {
   try {
+    if (req.user?.client_id && req.user.client_id !== parseInt(req.params.id, 10)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
     const result = await pool.query(
       `SELECT s.id, s.submitted_at, s.submission_data,
               f.form_name, f.form_plugin, f.id AS form_id

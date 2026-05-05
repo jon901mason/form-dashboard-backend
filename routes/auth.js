@@ -69,12 +69,12 @@ router.post('/login', loginLimiter, async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ id: user.id, email: user.email, client_id: user.client_id || null }, process.env.JWT_SECRET, {
       expiresIn: '7d',
     });
 
     const isAdmin = user.is_admin || user.email.trim().toLowerCase() === (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
-    res.json({ token, user: { id: user.id, email: user.email, name: user.name, is_admin: isAdmin, avatar_url: user.avatar_url || null } });
+    res.json({ token, user: { id: user.id, email: user.email, name: user.name, is_admin: isAdmin, avatar_url: user.avatar_url || null, client_id: user.client_id || null } });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Login failed' });

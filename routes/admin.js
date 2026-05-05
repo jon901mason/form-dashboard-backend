@@ -21,15 +21,15 @@ const requireAdmin = async (req, res, next) => {
 
 // POST /api/admin/users — create a new user
 router.post('/users', requireAdmin, async (req, res) => {
-  const { name, email, password, avatar_url } = req.body;
+  const { name, email, password, avatar_url, client_id } = req.body;
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'Name, email, and password are required' });
   }
   try {
     const hash = await bcrypt.hash(password, 10);
     const result = await pool.query(
-      'INSERT INTO users (email, password_hash, name, avatar_url) VALUES ($1, $2, $3, $4) RETURNING id, email, name',
-      [email, hash, name, avatar_url || null]
+      'INSERT INTO users (email, password_hash, name, avatar_url, client_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, name, client_id',
+      [email, hash, name, avatar_url || null, client_id || null]
     );
     res.json({ user: result.rows[0] });
   } catch (err) {

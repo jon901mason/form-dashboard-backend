@@ -2,9 +2,16 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 
-// Get all clients
+// Get all clients (portal users only see their own)
 router.get('/', async (req, res) => {
   try {
+    if (req.user?.client_id) {
+      const result = await pool.query(
+        'SELECT id, name, wordpress_url, created_at FROM clients WHERE id = $1',
+        [req.user.client_id]
+      );
+      return res.json(result.rows);
+    }
     const result = await pool.query('SELECT id, name, wordpress_url, created_at FROM clients ORDER BY created_at DESC');
     res.json(result.rows);
   } catch (err) {

@@ -2,9 +2,34 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 
-// GET /api/stats — global stats
+// GET /api/stats — global stats (scoped for portal users)
 router.get('/', async (req, res) => {
   try {
+    if (req.user?.client_id) {
+      const [totalRes, monthRes, lastMonthRes] = await Promise.all([
+        pool.query(
+          `SELECT COUNT(*) AS count FROM submissions s JOIN forms f ON s.form_id = f.id WHERE f.client_id = $1`,
+          [req.user.client_id]
+        ),
+        pool.query(
+          `SELECT COUNT(*) AS count FROM submissions s JOIN forms f ON s.form_id = f.id WHERE f.client_id = $1 AND date_trunc('month', s.submitted_at) = date_trunc('month', NOW())`,
+          [req.user.client_id]
+        ),
+        pool.query(
+          `SELECT COUNT(*) AS count FROM submissions s JOIN forms f ON s.form_id = f.id WHERE f.client_id = $1 AND date_trunc('month', s.submitted_at) = date_trunc('month', NOW() - INTERVAL '1 month')`,
+          [req.user.client_id]
+        ),
+      ]);
+      return res.json({
+        totalSubmissions:     parseInt(totalRes.rows[0].count, 10),
+        submissionsThisMonth: parseInt(monthRes.rows[0].count, 10),
+        lastMonthSubmissions: parseInt(lastMonthRes.rows[0].count, 10),
+        activeClients: 1,
+        activeForms: 0,
+        dailyTrend: [],
+      });
+    }
+
     const [totalRes, monthRes, clientsRes, formsRes, trendRes, lastMonthRes] = await Promise.all([
       pool.query('SELECT COUNT(*) AS count FROM submissions'),
       pool.query(`SELECT COUNT(*) AS count FROM submissions WHERE date_trunc('month', submitted_at) = date_trunc('month', NOW())`),

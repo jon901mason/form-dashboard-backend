@@ -202,6 +202,9 @@ router.post('/discover/:clientId', async (req, res) => {
 // Get forms for a client
 router.get('/client/:clientId', async (req, res) => {
   try {
+    if (req.user?.client_id && req.user.client_id !== parseInt(req.params.clientId, 10)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
     const result = await pool.query('SELECT id, form_id, form_name, form_plugin FROM forms WHERE client_id = $1 ORDER BY form_name', [req.params.clientId]);
     res.json(result.rows);
   } catch (err) {
@@ -212,6 +215,15 @@ router.get('/client/:clientId', async (req, res) => {
 // Get submissions for a form
 router.get('/:formId/submissions', async (req, res) => {
   try {
+    if (req.user?.client_id) {
+      const formCheck = await pool.query(
+        'SELECT id FROM forms WHERE id = $1 AND client_id = $2',
+        [req.params.formId, req.user.client_id]
+      );
+      if (formCheck.rows.length === 0) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+    }
     const result = await pool.query(
       'SELECT id, submission_data, submitted_at FROM submissions WHERE form_id = $1 ORDER BY submitted_at DESC',
       [req.params.formId]
